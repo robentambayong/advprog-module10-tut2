@@ -23,7 +23,8 @@ async fn handle_connection(
                 match incoming {
                     Some(Ok(msg)) if msg.is_text() => {
                         let text = msg.as_text().unwrap();
-                        bcast_tx.send(text.to_string())?;
+                        let formatted_msg = format!("{}: {}", addr, text);
+                        bcast_tx.send(formatted_msg)?;
                     }
                     Some(Err(e)) => {
                         eprintln!("Error from {}: {}", addr, e);

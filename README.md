@@ -31,3 +31,21 @@ For this experiment, I modified the application to run on port `8080` instead of
 2. In `client.rs`, I updated the connection target to `ClientBuilder::from_uri(Uri::from_static("ws://127.0.0.1:8080"))`.
 
 As seen in the screenshots, the server successfully starts on port 8080. Both clients are able to connect to this new port, establish the WebSocket (`ws://`) connection, and seamlessly broadcast messages to each other just like before.
+
+## Experiment 2.3: Small changes. Add some information to client
+
+**Server:**
+![Server Output 2.3](Experiment%202.3%20(server).png)
+
+**Client 1:**
+![Client 1 Output 2.3](Experiment%202.3%20(client1).png)
+
+**Client 2:**
+![Client 2 Output 2.3](Experiment%202.3%20(client2).png)
+
+**Explanation:**
+In this experiment, I modified the server so that clients can see who is sending each message. 
+
+In `server.rs`, inside the `handle_connection` function, the server receives the `addr: SocketAddr` of the connected client. I updated the websocket receiving task (`ws_stream.next()`) so that when a text message is received, it formats a new string combining the sender's IP/Port and the message: `let formatted_msg = format!("{}: {}", addr, text);`. This formatted string is what gets sent into the broadcast channel (`bcast_tx.send(formatted_msg)`). 
+
+As shown in the screenshots, clients now successfully receive messages prepended with the sender's specific `127.0.0.1:PORT` signature.
