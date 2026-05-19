@@ -14,7 +14,8 @@ async fn handle_connection(
     
     let mut bcast_rx = bcast_tx.subscribe();
     
-    ws_stream.send(Message::text("Welcome to chat! Type a message")).await?;
+    let welcome_msg = r#"{"sender": "Server", "content": "Welcome to Roben's RISTEK Coffee Lounge!"}"#;
+    ws_stream.send(Message::text(welcome_msg)).await?;
 
     loop {
         tokio::select! {
@@ -23,8 +24,10 @@ async fn handle_connection(
                 match incoming {
                     Some(Ok(msg)) if msg.is_text() => {
                         let text = msg.as_text().unwrap();
-                        let formatted_msg = format!("{}: {}", addr, text);
-                        bcast_tx.send(formatted_msg)?;
+                        
+                        // The text is already a JSON string from Yew, so just broadcast it directly!
+                        // We removed the `format!("{}: {}", addr, text)` logic here.
+                        bcast_tx.send(text.to_string())?;
                     }
                     Some(Err(e)) => {
                         eprintln!("Error from {}: {}", addr, e);
@@ -49,6 +52,7 @@ async fn handle_connection(
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let (bcast_tx, _) = channel(16);
 
+    // Listening on port 8080 to match the Yew client
     let listener = TcpListener::bind("127.0.0.1:8080").await?;
     println!("listening on port 8080");
 
@@ -58,6 +62,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let bcast_tx = bcast_tx.clone();
         
         tokio::spawn(async move {
+            // Using 'match' instead of '?' to properly handle the Result in the spawned task
             match ServerBuilder::new().accept(socket).await {
                 Ok((_req, ws_stream)) => {
                     if let Err(e) = handle_connection(addr, ws_stream, bcast_tx).await {
